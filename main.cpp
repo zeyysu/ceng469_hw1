@@ -22,11 +22,14 @@
 using namespace std;
 
 int width = 800, height = 600;
-int sampleSize = 10;
+int sampleSize = 4;
 float coordMultiplier = 1.0;
 float rotationAngle = 30;
 int vertCount, horzCount;
 int lightSize;
+GLuint gVertexAttribBuffer, gIndexBuffer;
+GLint gInVertexLoc, gInNormalLoc;
+int gVertexDataSizeInBytes, gNormalDataSizeInBytes;
 
 GLuint gProgram[2];
 struct Vertex
@@ -65,18 +68,18 @@ struct BezierSurface
 vector<BezierSurface> surfaces;
 glm::vec3 lightPos[5];
 glm::vec3 color[5];
-vector<Vertex> gVertices;
-vector<Normal> gNormals;
+// vector<Vertex> gVertices;
+// vector<Normal> gNormals;
 
 void drawModel()
 {
-	// glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
 
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
-
-	// glDrawElements(GL_TRIANGLES, gVertices.size(), GL_UNSIGNED_INT, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDrawElements(GL_TRIANGLES, (sampleSize-1) * (sampleSize-1) * 6, GL_UNSIGNED_INT, 0);
 }
 
 
@@ -87,17 +90,22 @@ void display(){
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    glm::mat4 rotate = glm::rotate(glm::mat4(1.f), glm::radians(rotationAngle), glm::vec3(0, 1, 0));
+    glm::mat4 rotate = glm::rotate(glm::mat4(1.f), glm::radians(rotationAngle), glm::vec3(1, 0, 0));
     glm::mat4 perspective = glm::perspective(45.0f,(GLfloat)width / (GLfloat)height, 1.0f, 100.0f);
     glm::mat4 viewing = glm::lookAt(glm::vec3(0,0,2), glm::vec3(0,0,-1), glm::vec3(0,1,0));
-    glm::mat4 transMat = viewing * perspective * rotate;
-    glUniform1i(glGetUniformLocation(gProgram[0], "lightSize"),lightSize);
-    glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "transMat"), 1, GL_FALSE, glm::value_ptr(transMat));
-    glUniform3fv(glGetUniformLocation(gProgram[0],"lightPosition"),5,glm::value_ptr(lightPos[0]));
-    glUniform3fv(glGetUniformLocation(gProgram[0],"color"),5,glm::value_ptr(color[0]));
-    glUniform1f(glGetUniformLocation(gProgram[0], "coordMultiplier"),coordMultiplier);
+    glm::mat4 transMat = perspective * viewing  * rotate;
 
-    drawModel();
+    for(int i = 0; i < surfaces.size(); i++){
+        glUniform1i(glGetUniformLocation(gProgram[0], "lightSize"),lightSize);
+        glUniform1i(glGetUniformLocation(gProgram[0], "sampleSize"),sampleSize);
+        glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "modelingMat"), 1, GL_FALSE, glm::value_ptr(rotate));
+        glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "transMat"), 1, GL_FALSE, glm::value_ptr(transMat));
+        glUniform3fv(glGetUniformLocation(gProgram[0],"lightPosition"),5,glm::value_ptr(lightPos[0]));
+        glUniform3fv(glGetUniformLocation(gProgram[0],"color"),5,glm::value_ptr(color[0]));
+        glUniform1f(glGetUniformLocation(gProgram[0], "coordMultiplier"),coordMultiplier);
+        drawModel();
+    }
+
 
 }
 
@@ -192,11 +200,89 @@ void initShaders()
     glUseProgram(gProgram[0]);
 }
 
+void initVBO()
+{
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    assert(vao > 0);
+    glBindVertexArray(vao);
+    // cout << "vao = " << vao << endl;
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	assert(glGetError() == GL_NONE);
+
+	glGenBuffers(1, &gVertexAttribBuffer);
+	glGenBuffers(1, &gIndexBuffer);
+
+	assert(gVertexAttribBuffer > 0 && gIndexBuffer > 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
+}
+
+void changebuffer()
+{
+    int vertexCount =sampleSize * sampleSize;
+
+	gVertexDataSizeInBytes = vertexCount * 3 * sizeof(GLfloat);
+	gNormalDataSizeInBytes = vertexCount * 3 * sizeof(GLfloat);
+	int indexDataSizeInBytes = (sampleSize-1) * (sampleSize-1) * 6 * sizeof(GLuint);
+	GLfloat* vertexData = new GLfloat [vertexCount  * 3];
+	GLfloat* normalData = new GLfloat [vertexCount  * 3];
+	GLuint* indexData = new GLuint [ (sampleSize-1) * (sampleSize-1) * 6 ];
+
+	for (int i = 0; i < vertexCount ; ++i)
+	{
+        vertexData[3*i] = 0;
+ 		vertexData[3*i+1] = 0;
+		vertexData[3*i+2] = 0;
+	}
+
+	for (int i = 0; i < vertexCount; ++i)
+	{
+		normalData[3*i] = 1;
+		normalData[3*i+1] = 1;
+		normalData[3*i+2] = 1;
+	}
+
+    for(int i = 0, k=0 ; i <(sampleSize-1) * (sampleSize-1) ; i++){
+        if((k+1) % sampleSize == 0) k++;
+        indexData[6*i] = k;
+		indexData[6*i + 1] = k + sampleSize;
+        indexData[6*i + 2] = k + sampleSize +1;
+
+        indexData[6*i + 3] = k;
+		indexData[6*i+4] = k + 1;
+        indexData[6*i+5] = k + sampleSize +1;
+        k++;
+    }
+
+    // for(int i=0; i<(sampleSize-1) * (sampleSize-1) * 2;i++ ){
+    //     cout <<  indexData[3*i] <<  " " <<  indexData[3*i+1] << " " << indexData[3*i+2] <<endl;
+    // }
+
+	glBufferData(GL_ARRAY_BUFFER, gVertexDataSizeInBytes + gNormalDataSizeInBytes, 0, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, gVertexDataSizeInBytes, vertexData);
+	glBufferSubData(GL_ARRAY_BUFFER, gVertexDataSizeInBytes, gNormalDataSizeInBytes, normalData);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSizeInBytes, indexData, GL_STATIC_DRAW);
+
+	// done copying; can free now
+	delete[] vertexData;
+	delete[] normalData;
+	delete[] indexData;
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+}
+
 
 void init() 
 {
 
     glEnable(GL_DEPTH_TEST);
+    initVBO();
+    changebuffer();
     initShaders();
 }
 
@@ -247,11 +333,17 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     }
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
-       if(sampleSize < 80) sampleSize += 2;
+       if(sampleSize < 80) {
+            sampleSize += 2;
+            changebuffer();
+       }
     }
     if (key == GLFW_KEY_S && action == GLFW_PRESS)
     {
-       if(sampleSize > 2) sampleSize -= 2;
+       if(sampleSize > 2) {
+            sampleSize -= 2;
+            changebuffer();
+       }
     }
 }
 

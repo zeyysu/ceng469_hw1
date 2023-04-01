@@ -17,16 +17,11 @@ uniform mat4 modelingMatInvTr;
 uniform mat4 ortographicMat;
 
 uniform mat4 transMat;
-uniform vec3 lightPosition[5];
-uniform vec3 color[5];
-uniform int lightSize;
+uniform int sampleSize;
 uniform float coordMultiplier;
 
 
 out vec4 fragPos;
-out vec3 lightPos[5];
-out vec3 intensity[5];
-out int lightCount;
 out vec4 N;
 
 void main(void)
@@ -50,14 +45,20 @@ void main(void)
 
     vertexColor  =vec4(diffuseColor + ambientColor + specularColor, 1);
 	*/
+	float xmin = (-0.5)* coordMultiplier;
+	float xmax =  (0.5)* coordMultiplier;
+	float ymin = (-0.5)* coordMultiplier;
+	float ymax =  (0.5)* coordMultiplier;
 
-	for(int i=0; i< lightSize;i++){
-		lightPos[i] = lightPosition[i];
-		intensity[i] = color[i];
-	}
-	fragPos = vec4(0,0,0,1);
-	N = vec4(0,0,0,1);
+	float v = floor(gl_VertexID/sampleSize);
+	float h = gl_VertexID - sampleSize * v;
 
-	gl_Position = transMat * vec4(inVertex, 1.0);
+	float x = xmin + h * ((xmax-xmin)/(sampleSize-1));
+	float y = ymin + v * ((ymax-ymin))/(sampleSize-1);
+	
+	fragPos = modelingMat *  vec4(x,y,0,1.0) ;
+	N = vec4(0,0,1,1);
+
+	gl_Position = transMat * vec4(x,y,0,1.0);
 }
 
