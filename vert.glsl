@@ -19,42 +19,47 @@ uniform mat4 ortographicMat;
 uniform mat4 transMat;
 uniform int sampleSize;
 uniform float coordMultiplier;
+uniform int surfaceindex;
+uniform int bezierX;
+uniform int bezierY;
 
 
 out vec4 fragPos;
 out vec4 N;
+out vec3 testColor;
 
 void main(void)
 {
-
-	/*vec3 ks = vec3(0.5,0.5,0.5);
-	vec3 ka = vec3(color.x*0.6 , color.y*0.6, color.z*0.6);
-
-	vec4 p = modelingMat * vec4(inVertex, 1);
-	vec3 L = normalize(lightPos - vec3(p));
-	vec3 V = normalize(eyePos - vec3(p));
-	vec3 H = normalize(L + V);
-	vec3 N = vec3(modelingMatInvTr * vec4(inNormal, 0)); 
-	N = normalize(N);
-	float NdotL = dot(N, L);
-	float NdotH = dot(N, H);
-	
-	vec3 diffuseColor = I * color * max(0, NdotL);
-	vec3 ambientColor = Iamb * ka;
-	vec3 specularColor = I * ks * pow(max(0, NdotH), 7);
-
-    vertexColor  =vec4(diffuseColor + ambientColor + specularColor, 1);
-	*/
 	float xmin = (-0.5)* coordMultiplier;
-	float xmax =  (0.5)* coordMultiplier;
 	float ymin = (-0.5)* coordMultiplier;
-	float ymax =  (0.5)* coordMultiplier;
 
-	float v = floor(gl_VertexID/sampleSize);
-	float h = gl_VertexID - sampleSize * v;
+	float xmax, ymax;
 
-	float x = xmin + h * ((xmax-xmin)/(sampleSize-1));
-	float y = ymin + v * ((ymax-ymin))/(sampleSize-1);
+	if(bezierX >= bezierY){
+		xmax =  (0.5)* coordMultiplier;
+		ymax = ymin + (bezierY*(xmax-xmin))/bezierX;	
+	} else{
+		ymax =  (0.5)* coordMultiplier;
+		xmax =  xmin + (bezierX*(ymax-ymin))/bezierY;	
+	}
+
+	float bIndy = floor(surfaceindex/bezierX);
+	float bIndx = surfaceindex - bezierX * bIndy;
+
+	float xdist = xmax - xmin;
+	float ydist = ymax - ymin;
+	xmin = xmin + ((xdist)/(bezierX)) * bIndx;
+	xmax = xmin + (xdist)/(bezierX);
+
+	ymin = ymin + ((ydist)/bezierY) * bIndy;
+	ymax = ymin + (ydist)/bezierY;
+
+
+	float sY = floor(gl_VertexID/sampleSize);
+	float sX = gl_VertexID - sampleSize * sY;
+
+	float x = xmin + sX * ((xmax-xmin)/(sampleSize-1));
+	float y = ymax - sY * ((ymax-ymin))/(sampleSize-1);
 	
 	fragPos = modelingMat *  vec4(x,y,0,1.0) ;
 	N = vec4(0,0,1,1);

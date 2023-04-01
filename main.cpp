@@ -98,6 +98,11 @@ void display(){
     for(int i = 0; i < surfaces.size(); i++){
         glUniform1i(glGetUniformLocation(gProgram[0], "lightSize"),lightSize);
         glUniform1i(glGetUniformLocation(gProgram[0], "sampleSize"),sampleSize);
+
+        glUniform1i(glGetUniformLocation(gProgram[0], "surfaceindex"),i);
+        glUniform1i(glGetUniformLocation(gProgram[0], "bezierX"),horzCount/4);
+        glUniform1i(glGetUniformLocation(gProgram[0], "bezierY"),vertCount/4);
+
         glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "modelingMat"), 1, GL_FALSE, glm::value_ptr(rotate));
         glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "transMat"), 1, GL_FALSE, glm::value_ptr(transMat));
         glUniform3fv(glGetUniformLocation(gProgram[0],"lightPosition"),5,glm::value_ptr(lightPos[0]));
