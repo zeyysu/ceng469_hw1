@@ -1,22 +1,12 @@
 #version 330
 
-vec3 eyePos = vec3(0, 0, 0);
-
-vec3 I = vec3(2, 2, 2);
-vec3 Iamb = vec3(0.8, 0.8, 0.8);
-
-vec3 kd = vec3(1, 0.2, 0.2);
-//vec3 ka = vec3(0.1, 0.1, 0.1);
-//vec3 ks = vec3(0.8, 0.8, 0.8);
-
 layout(location=0) in vec3 inVertex;
 layout(location=1) in vec3 inNormal;
 
 uniform mat4 modelingMat;
-uniform mat4 modelingMatInvTr;
-uniform mat4 ortographicMat;
-
 uniform mat4 transMat;
+uniform mat4 cps;
+
 uniform int sampleSize;
 uniform float coordMultiplier;
 uniform int surfaceindex;
@@ -54,16 +44,33 @@ void main(void)
 	ymin = ymin + ((ydist)/bezierY) * bIndy;
 	ymax = ymin + (ydist)/bezierY;
 
-
 	float sY = floor(gl_VertexID/sampleSize);
 	float sX = gl_VertexID - sampleSize * sY;
 
 	float x = xmin + sX * ((xmax-xmin)/(sampleSize-1));
-	float y = ymax - sY * ((ymax-ymin))/(sampleSize-1);
-	
-	fragPos = modelingMat *  vec4(x,y,0,1.0) ;
+	float y = ymin + sY * ((ymax-ymin))/(sampleSize-1);
+
+	mat4 MB = mat4(
+		-1, 3, -3, 1,
+		3, -6, 3, 0,
+		-3, 3, 0, 0,
+		1, 0, 0, 0
+	);
+
+	mat4 MBT = transpose(MB);
+
+	float s = (x-xmin)/(xmax-xmin);
+	float t = (y-ymin)/(ymax-ymin);
+
+	vec4 T = vec4(t*t*t, t*t, t, 1);
+	vec4 S = vec4(s*s*s, s*s, s, 1);
+
+	vec4 Q = MB * cps * MBT * T;
+	float z = dot(S,Q);
+
+	fragPos = modelingMat *  vec4(x,y,z,1.0);
 	N = vec4(0,0,1,1);
 
-	gl_Position = transMat * vec4(x,y,0,1.0);
+	gl_Position = transMat * vec4(x,y,z,1.0);
 }
 

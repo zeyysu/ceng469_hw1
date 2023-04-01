@@ -22,9 +22,9 @@
 using namespace std;
 
 int width = 800, height = 600;
-int sampleSize = 4;
+int sampleSize = 10;
 float coordMultiplier = 1.0;
-float rotationAngle = 30;
+float rotationAngle = -30;
 int vertCount, horzCount;
 int lightSize;
 GLuint gVertexAttribBuffer, gIndexBuffer;
@@ -96,8 +96,10 @@ void display(){
     glm::mat4 transMat = perspective * viewing  * rotate;
 
     for(int i = 0; i < surfaces.size(); i++){
-        glUniform1i(glGetUniformLocation(gProgram[0], "lightSize"),lightSize);
+        glm::mat4 cps = glm::make_mat4x4(surfaces[i].cps);
+
         glUniform1i(glGetUniformLocation(gProgram[0], "sampleSize"),sampleSize);
+        glUniform1f(glGetUniformLocation(gProgram[0], "coordMultiplier"),coordMultiplier);
 
         glUniform1i(glGetUniformLocation(gProgram[0], "surfaceindex"),i);
         glUniform1i(glGetUniformLocation(gProgram[0], "bezierX"),horzCount/4);
@@ -105,9 +107,11 @@ void display(){
 
         glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "modelingMat"), 1, GL_FALSE, glm::value_ptr(rotate));
         glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "transMat"), 1, GL_FALSE, glm::value_ptr(transMat));
+        glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "cps"), 1, GL_FALSE, glm::value_ptr(cps));
+
+        glUniform1i(glGetUniformLocation(gProgram[0], "lightSize"),lightSize);
         glUniform3fv(glGetUniformLocation(gProgram[0],"lightPosition"),5,glm::value_ptr(lightPos[0]));
         glUniform3fv(glGetUniformLocation(gProgram[0],"color"),5,glm::value_ptr(color[0]));
-        glUniform1f(glGetUniformLocation(gProgram[0], "coordMultiplier"),coordMultiplier);
         drawModel();
     }
 
@@ -368,13 +372,22 @@ bool parseInput(string inputFile){
         myfile >> vertCount >> horzCount;
         int surfaceCount = (vertCount/4)*(horzCount/4);
         for(int k=0;k<surfaceCount;k++) surfaces.push_back(BezierSurface(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0));
-        int index = -1;
         for(int v=0;v<vertCount;v++){
             for(int h=0;h<horzCount;h++){
-                if(h%4 == 0 && v%4 == 0) index++;
+                int indY = v/4;
+                int indx = h/4;
+                int index = (v/4) * (horzCount/4) + indx;
                 myfile >> surfaces[index].cps[(v%4)*4 + (h%4)];
             }
         }
+        // for(int s=0;s<surfaceCount;s++){
+        // for(int i = 0;i<4 ; i++){
+        //     for(int k=0; k<4 ; k++){
+        //         cout<<surfaces[s].cps[4*i+k]<<" ";
+        //     }
+        //     cout<<endl;
+        // }
+        // }
         return true;
     }
     else{
