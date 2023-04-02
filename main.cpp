@@ -169,7 +169,7 @@ void createVS(GLuint& program, const string& filename)
 
     char output[1024] = {0};
     glGetShaderInfoLog(vs, 1024, &length, output);
-    // printf("VS compile log: %s\n", output);
+    printf("VS compile log: %s\n", output);
 
     glAttachShader(program, vs);
 }
@@ -193,7 +193,7 @@ void createFS(GLuint& program, const string& filename)
 
     char output[1024] = {0};
     glGetShaderInfoLog(fs, 1024, &length, output);
-    // printf("FS compile log: %s\n", output);
+    printf("FS compile log: %s\n", output);
 
     glAttachShader(program, fs);
 }
@@ -369,6 +369,10 @@ bool parseInput(string inputFile){
             lightPos[i] = glm::vec3(xPos,yPos,zPos);
             color[i] = glm::vec3(rInt,gInt,bInt);
         }
+        // for(int i = 0; i <lightSize; i++){
+        //     cout<<lightPos[i].r<<" "<<lightPos[i].g<<" "<<lightPos[i].b<<endl;
+        //     cout<<color[i].r<<" "<<color[i].g<<" "<<color[i].b<<endl;
+        // }
         myfile >> vertCount >> horzCount;
         int surfaceCount = (vertCount/4)*(horzCount/4);
         for(int k=0;k<surfaceCount;k++) surfaces.push_back(BezierSurface(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0));

@@ -18,26 +18,28 @@ out vec4 FragColor;
 
 void main(void)
 {
-	vec3 diffuseColor = vec3(0,0,0);
-	vec3 specularColor  = vec3(0,0,0);
 
 	vec3 normal = normalize(vec3(N));
 
 	vec3 V = normalize(eyePos - vec3(fragPos));
 
-	for(int i=0; i< lightSize; i++){
+	vec3 resColor =  Iamb * ka;
+
+	for(int i=0; i < lightSize; i++){
 		vec3 L = normalize(lightPosition[i] - vec3(fragPos));
 		vec3 H = normalize(L + V);
 		float NdotL = dot(normal, L);
 		float NdotH = dot(normal, H);
 
-		float r2 = dot(lightPosition[i] - vec3(fragPos),lightPosition[i] - vec3(fragPos));
-		vec3 Ir = (1/r2) * color[i];
-		diffuseColor +=  Ir * max(0, NdotL);
-		specularColor += Ir * ks * pow(max(0, NdotH), 400);
+		float r2 = dot(lightPosition[i] - vec3(fragPos), lightPosition[i] - vec3(fragPos));
+		
+		vec3 diffuseColor = (1/r2) * max(0, NdotL) * color[i] * kd;
+		vec3 specularColor = (1/r2) * pow(max(0, NdotH), 400) * color[i] * ks;
+
+		resColor += diffuseColor;
+		resColor += specularColor;
 	}
 
-	vec3 ambientColor = Iamb * ka;
 
-    FragColor = vec4(diffuseColor + ambientColor + specularColor, 1);
+    FragColor = vec4(resColor, 1);
 }
