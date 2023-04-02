@@ -13,7 +13,6 @@ uniform int lightSize;
 
 in vec4 fragPos;
 in vec4 N;
-in vec3 testColor;
 out vec4 FragColor;
 
 void main(void)
