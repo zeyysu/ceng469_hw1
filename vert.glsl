@@ -32,7 +32,7 @@ void main(void)
 		xmax =  xmin + (bezierX*(ymax-ymin))/bezierY;	
 	}
 
-	float bIndy = floor(float(surfaceindex)/bezierX);
+	float bIndy = surfaceindex/bezierX;
 	float bIndx = surfaceindex - bezierX * bIndy;
 
 	float xdist = xmax - xmin;
@@ -43,7 +43,7 @@ void main(void)
 	ymax = ymax - ((ydist)/bezierY) * bIndy;
 	ymin = ymax - ((ydist)/bezierY);
 
-	float sY = floor(float(gl_VertexID)/sampleSize);
+	float sY = gl_VertexID/sampleSize;
 	float sX = gl_VertexID - sampleSize * sY;
 
 	float x = xmin + sX * ((xmax-xmin)/(sampleSize-1));
